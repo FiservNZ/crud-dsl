@@ -1,4 +1,5 @@
 import com.example.reqres.*;
+import okhttp3.OkHttpClient
 
 fun main(args : Array<String>) {
     fun result() =
@@ -44,5 +45,5 @@ fun main(args : Array<String>) {
 //        }
 //
     println( result().toString() )
-    result().applyToServer()
+    result().applyToServer(OkHttpClient())
 }

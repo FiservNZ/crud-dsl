@@ -1,8 +1,13 @@
 package com.example.reqres
+
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import okhttp3.Response
+
 // https://reqres.in/
 interface Element {
     fun render(builder: StringBuilder, indent: String)
-    fun applyToServer()
+    fun applyToServer(client: OkHttpClient)
 }
 
 abstract class TextElement(val text: String) : Element {
@@ -50,8 +55,20 @@ abstract class Tag(val name: String) : Element {
 
 class UserList : Tag("userlist") {
     fun user(init: User.() -> Unit) = initTag(User(), init)
-    override fun applyToServer() {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    val url = "https://reqres.in/api/users"
+    override fun applyToServer(client: OkHttpClient) {
+        // This would compare children to the list returned from https://reqres.in/api/users
+        var request = Request.Builder()
+            .url(url)
+            .build();
+
+        client.newCall(request).execute().apply {
+            println(this.request.url.toUrl().toString())
+            println(this.body?.string())
+        }
+
+        children.forEach { element: Element -> element.applyToServer(client) }
+        // CREATE CHILD, LET CHILD Update the existing instance, DELETE user on server
     }
 }
 
@@ -82,8 +99,17 @@ class User : Tag("user") {
             attributes["avatar"] = value
         }
 
-    override fun applyToServer() {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    val url = "https://reqres.in/api/users/"
+    override fun applyToServer(client: OkHttpClient) {
+        // This would compare an instance of user from https://reqres.in/api/users/2 with the current object. CREATE / UPDATE as needed
+        var request = Request.Builder()
+            .url(url+id)
+            .build();
+
+        client.newCall(request).execute().apply {
+            println(this.request.url.toUrl().toString())
+            println(this.body?.string())
+        }
     }
 }
 
