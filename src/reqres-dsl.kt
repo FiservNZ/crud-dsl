@@ -1,5 +1,8 @@
 package com.example.reqres
 
+import com.garethnz.cruddsl.base.Element
+import com.garethnz.cruddsl.base.ListAPI
+import com.garethnz.cruddsl.base.Tag
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import okhttp3.MediaType.Companion.toMediaType
@@ -12,51 +15,6 @@ import okhttp3.RequestBody
 val MEDIA_TYPE_JSON = "application/json; charset=utf-8".toMediaType()
 
 // https://reqres.in/
-interface Element {
-    fun render(builder: StringBuilder, indent: String)
-    fun applyToServer(client: OkHttpClient)
-}
-
-@DslMarker
-annotation class ReqResUserMarker
-
-@ReqResUserMarker
-abstract class Tag(val name: String) : Element {
-    val children = arrayListOf<Element>()
-    val attributes = hashMapOf<String, String>()
-
-    protected fun <T : Element> initTag(tag: T, init: T.() -> Unit): T {
-        tag.init()
-        children.add(tag)
-        return tag
-    }
-
-    override fun render(builder: StringBuilder, indent: String) {
-        builder.append("$indent$name {${renderAttributes(indent+"  ")}")
-        for (c in children) {
-            c.render(builder, indent + "  ")
-        }
-        builder.append("$indent}\n")
-    }
-
-    private fun renderAttributes(indent: String): String {
-        val builder = StringBuilder("\n")
-        if (attributes.size == 0) {
-            return builder.toString()
-        }
-        for ((attr, value) in attributes) {
-            builder.append("$indent$attr = \"$value\"\n")
-        }
-        return builder.toString()
-    }
-
-    override fun toString(): String {
-        val builder = StringBuilder()
-        render(builder, "")
-        return builder.toString()
-    }
-}
-
 data class UsersResponse( val page: Int,
                          val per_page: Int,
                          val total: Int,
@@ -88,7 +46,7 @@ data class UsersResponse( val page: Int,
     }
 }
 
-class UserList : Tag("userlist") {
+class UserList : ListAPI("userlist") {
     fun user(init: User.() -> Unit) = initTag(User(), init)
     val url = "https://reqres.in/api/users"
     var exhaustive: Boolean
