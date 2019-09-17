@@ -6,11 +6,9 @@ import com.garethnz.cruddsl.base.Tag
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import okhttp3.MediaType.Companion.toMediaType
-import okhttp3.RequestBody.Companion.toRequestBody
-import okhttp3.MediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
-import okhttp3.RequestBody
+import okhttp3.RequestBody.Companion.toRequestBody
 
 val MEDIA_TYPE_JSON = "application/json; charset=utf-8".toMediaType()
 
@@ -46,30 +44,26 @@ data class UsersResponse( val page: Int,
     }
 }
 
-class UserList : ListAPI("userlist") {
+class UserList : ListAPI() {
     fun user(init: User.() -> Unit) = initTag(User(), init)
     val url = "https://reqres.in/api/users"
-    var exhaustive: Boolean
-        get() = attributes["exhaustive"]!!.toBoolean()
-        set(value) {
-            attributes["exhaustive"] = value.toString()
-        }
+
     override fun applyToServer(client: OkHttpClient) {
         // This would compare children to the list returned from https://reqres.in/api/users
-        var request = Request.Builder()
+        val request = Request.Builder()
             .url(url)
-            .build();
+            .build()
 
         val moshi = Moshi.Builder()
             // ... add your own JsonAdapters and factories ...
             .add(KotlinJsonAdapterFactory())
             .build()
-        val jsonAdapter = moshi.adapter<UsersResponse>(UsersResponse::class.java!!)
+        val jsonAdapter = moshi.adapter<UsersResponse>(UsersResponse::class.java)
 
         var usersResponse: UsersResponse?
         client.newCall(request).execute().apply {
             println(this.request.url.toUrl().toString())
-            usersResponse = jsonAdapter.fromJson(this.body?.source())
+            usersResponse = jsonAdapter.fromJson(this.body?.source()!!)
             //println( usersResponse )
         }
         val childUsersToProcess = children.filterIsInstance<User>().toMutableList()
@@ -97,34 +91,12 @@ class UserList : ListAPI("userlist") {
     }
 }
 
-class User : Tag("user") {
-    val idmatch: Boolean
-        get() = attributes.containsKey("id")
-    var id: Int?
-        get() = attributes["id"]?.toInt()
-        set(value) {
-            attributes["id"] = value.toString()
-        }
-    var email: String
-        get() = attributes["email"]!!
-        set(value) {
-            attributes["email"] = value
-        }
-    var first_name: String
-        get() = attributes["first_name"]!!
-        set(value) {
-            attributes["first_name"] = value
-        }
-    var last_name: String
-        get() = attributes["last_name"]!!
-        set(value) {
-            attributes["last_name"] = value
-        }
-    var avatar: String
-        get() = attributes["avatar"]!!
-        set(value) {
-            attributes["avatar"] = value
-        }
+class User : Tag() {
+    var id: Int? = null
+    var email: String? = null
+    var first_name: String? = null
+    var last_name: String? = null
+    var avatar: String? = null
 
     override fun applyToServer(client: OkHttpClient) {
         // TODO: If this isn't running as part of a LIST, targetUser needs to be GET'd
@@ -154,23 +126,23 @@ class User : Tag("user") {
             // ... add your own JsonAdapters and factories ...
             .add(KotlinJsonAdapterFactory())
             .build()
-        val jsonAdapter = moshi.adapter<User>(User::class.java!!)
+        val jsonAdapter = moshi.adapter<User>(User::class.java)
 
         val jsonUser = jsonAdapter.toJson(this)
 
 
 
-        var request : Request;
+        val request : Request
         if (createTputF) {
             request = Request.Builder()
                 .url(url+id) // TODO does this type of API usually work? i.e. requesting the ID of a new object?
                 .post(jsonUser.toRequestBody(MEDIA_TYPE_JSON))
-                .build();
+                .build()
         } else {
             request = Request.Builder()
                 .url(url+id)
                 .put(jsonUser.toRequestBody(MEDIA_TYPE_JSON))
-                .build();
+                .build()
         }
 
         client.newCall(request).execute().apply {
@@ -184,14 +156,14 @@ class User : Tag("user") {
             // ... add your own JsonAdapters and factories ...
             .add(KotlinJsonAdapterFactory())
             .build()
-        val jsonAdapter = moshi.adapter<User>(User::class.java!!)
+        val jsonAdapter = moshi.adapter<User>(User::class.java)
 
         val jsonUser = jsonAdapter.toJson(this)
 
-        var request = Request.Builder()
+        val request = Request.Builder()
                 .url(url+id) // TODO does this type of API usually work? i.e. requesting the ID of a new object?
                 .delete(jsonUser.toRequestBody(MEDIA_TYPE_JSON))
-                .build();
+                .build()
 
         client.newCall(request).execute().apply {
             println("User $id deleted successfully")

@@ -1,7 +1,8 @@
 package com.garethnz.cruddsl.base
 
 import okhttp3.OkHttpClient
-import kotlin.reflect.typeOf
+import kotlin.reflect.full.memberProperties
+import kotlin.reflect.jvm.javaGetter
 
 interface Element {
     fun render(builder: StringBuilder, indent: String)
@@ -12,9 +13,8 @@ interface Element {
 annotation class CrudDSLMarker
 
 @CrudDSLMarker
-abstract class Tag(val name: String) : Element {
+abstract class Tag() : Element {
     val children = arrayListOf<Element>()
-    val attributes = hashMapOf<String, String>()
 
     protected fun <T : Element> initTag(tag: T, init: T.() -> Unit): T {
         tag.init()
@@ -23,7 +23,7 @@ abstract class Tag(val name: String) : Element {
     }
 
     override fun render(builder: StringBuilder, indent: String) {
-        builder.append("$indent$name {${renderAttributes(indent+"  ")}")
+        builder.append("$indent${this::class.simpleName} {${renderAttributes(indent+"  ")}")
         for (c in children) {
             c.render(builder, indent + "  ")
         }
@@ -32,11 +32,11 @@ abstract class Tag(val name: String) : Element {
 
     private fun renderAttributes(indent: String): String {
         val builder = StringBuilder("\n")
-        if (attributes.size == 0) {
-            return builder.toString()
-        }
-        for ((attr, value) in attributes) {
-            builder.append("$indent$attr = \"$value\"\n")
+        for (prop in this::class.memberProperties) {
+            if (prop.name.equals("attributes") || prop.name.equals("children")) {
+                continue
+            }
+            builder.append("$indent${prop.name} ${prop.javaGetter?.invoke(this)}\n")
         }
         return builder.toString()
     }
@@ -48,11 +48,7 @@ abstract class Tag(val name: String) : Element {
     }
 }
 
-public abstract class ListAPI : Tag("list") {
+abstract class ListAPI(
+    var exhaustive: Boolean = false) : Tag() {
     // Subclass will define dsl for children
-    var exhaustive: Boolean
-        get() = attributes["exhaustive"]!!.toBoolean()
-        set(value) {
-            attributes["exhaustive"] = value.toString()
-        }
 }
