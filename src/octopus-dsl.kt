@@ -1,58 +1,46 @@
 package com.garethnz.cruddsl.octopus
 
-import com.garethnz.cruddsl.base.Element
+import com.garethnz.cruddsl.base.ItemApi
 import com.garethnz.cruddsl.base.ListAPI
-import com.garethnz.cruddsl.base.Tag
+import com.squareup.moshi.JsonAdapter
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import okhttp3.MediaType.Companion.toMediaType
-import okhttp3.OkHttpClient
-import okhttp3.Request
 
 val MEDIA_TYPE_JSON = "application/json; charset=utf-8".toMediaType()
 
 
 // Environment
-class EnvironmentList : ListAPI() {
+class EnvironmentList : ListAPI<Array<Environment>, Environment>() {
     fun environment(init: Environment.() -> Unit) = initTag(Environment(), init)
-    val url = "http://localhost:1322/api/environments/all"
 
-    override fun applyToServer(client: OkHttpClient) {
-        // This would compare children to the list returned from https://reqres.in/api/users
-        val request = Request.Builder()
-            .url(url)
-            .build()
+    override fun url(): String {
+        return url
+    }
 
+    override fun listOfChildren(sourceData: Array<Environment>): Iterator<Environment> {
+        return sourceData.iterator()
+    }
+
+    override fun getJsonAdapter(): JsonAdapter<Array<Environment>> {
         val moshi = Moshi.Builder()
             // ... add your own JsonAdapters and factories ...
             .add(KotlinJsonAdapterFactory())
             .build()
-        val jsonAdapter = moshi.adapter<Array<Environment>>(Array<Environment>::class.java)
+        return moshi.adapter<Array<Environment>>(Array<Environment>::class.java)
+    }
 
-        var response: Array<Environment>?
-        client.newCall(request).execute().apply {
-            println(this.request.url.toUrl().toString())
-            //println( this.body?.string() )
-            response = jsonAdapter.fromJson(this.body?.source()!!)
+    override fun getChildElements(): MutableList<Environment> {
+        return children.filterIsInstance<Environment>().toMutableList()
+    }
 
-        }
-        val childUsersToProcess = children.filterIsInstance<Environment>().toMutableList()
-
-        println("Envs from server:")
-        response?.let {
-            it.forEach { item ->
-                println(item)
-            }
-        }
-
-        println("Envs from dsl:")
-        childUsersToProcess.forEach { element: Element -> println(element) } //element.applyToServer(client) }
-        // CREATE CHILD, LET CHILD Update the existing instance, DELETE user on server
+    companion object {
+        const val url = "http://localhost:1322/api/environments/all"
     }
 }
 
 data class ExtensionSettingsValues(val extensionId: String, val values: Array<String>)
-class Environment() : Tag() {
+class Environment() : ItemApi<Environment>() {
     var SpaceId : String? = null
     var ExtensionSettings: List<ExtensionSettingsValues>? = null
     var readOnly : Boolean = false
@@ -66,9 +54,36 @@ class Environment() : Tag() {
     var Description : String? = null
     var LastModifiedOn:	String? = null //($date-time)
 
-    // TODO: const val url = "https://reqres.in/api/users/"
-    override fun applyToServer(client: OkHttpClient) {
+    override val primaryIdForUrl: String
+        get() = Id!!
 
+    override fun url(): String {
+        return url
+    }
+
+    companion object {
+        const val url = "http://localhost:1322/api/environments/" // TODO: end slash not required for POST, is required when PUT/DELETE and including the id
+    }
+
+    override fun setPrimaryId(destinationPrimary: Environment) {
+        Id = destinationPrimary.Id
+    }
+
+    override fun primaryKeyEquals(target: Environment): Boolean {
+        return this.Id == target.Id
+    }
+
+    override fun userVisibleName(): String {
+        return Name!!
+    }
+
+    override fun getAsJson(): String {
+        val moshi = Moshi.Builder()
+            // ... add your own JsonAdapters and factories ...
+            .add(KotlinJsonAdapterFactory())
+            .build()
+        val jsonAdapter = moshi.adapter<Environment>(Environment::class.java)
+        return jsonAdapter.toJson(this)
     }
 }
 
