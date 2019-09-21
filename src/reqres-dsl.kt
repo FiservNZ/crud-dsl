@@ -1,17 +1,12 @@
 package com.example.reqres
 
-import com.garethnz.cruddsl.base.Element
 import com.garethnz.cruddsl.base.ItemApi
 import com.garethnz.cruddsl.base.ListAPI
-import com.garethnz.cruddsl.base.Tag
 import com.garethnz.cruddsl.octopus.Environment
 import com.squareup.moshi.JsonAdapter
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import okhttp3.MediaType.Companion.toMediaType
-import okhttp3.OkHttpClient
-import okhttp3.Request
-import okhttp3.RequestBody.Companion.toRequestBody
 
 val MEDIA_TYPE_JSON = "application/json; charset=utf-8".toMediaType()
 
@@ -91,12 +86,12 @@ class User : ItemApi<User>() {
         this.id = destinationPrimary.id
     }
 
-    override fun url(): String {
-        return url
+    override fun itemUrl(type: HttpRequestType): String {
+        return when(type) {
+            HttpRequestType.POST -> Environment.url
+            HttpRequestType.GET,HttpRequestType.PUT,HttpRequestType.DELETE -> url + id
+        }
     }
-
-    override val primaryIdForUrl: String
-        get() = id.toString()
 
     override fun userVisibleName(): String {
         return email!!

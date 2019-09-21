@@ -7,6 +7,7 @@ import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 import kotlin.reflect.full.memberProperties
 import kotlin.reflect.jvm.javaGetter
+import kotlin.reflect.jvm.javaType
 
 val MEDIA_TYPE_JSON = "application/json; charset=utf-8".toMediaType()
 
@@ -29,7 +30,8 @@ abstract class Tag() : Element {
     }
 
     override fun render(builder: StringBuilder, indent: String) {
-        builder.append("$indent${this::class.simpleName} {${renderAttributes(indent+"  ")}")
+        var name = this::class.simpleName!!.toLowerCase().replace("list","s")
+        builder.append("$indent${name} {${renderAttributes(indent+"  ")}")
         for (c in children) {
             c.render(builder, indent + "  ")
         }
@@ -42,7 +44,15 @@ abstract class Tag() : Element {
             if (prop.name.equals("attributes") || prop.name.equals("children")) {
                 continue
             }
-            builder.append("$indent${prop.name} ${prop.javaGetter?.invoke(this)}\n")
+
+            val obj = prop.javaGetter?.invoke(this)
+            obj?.let {
+                if (prop.returnType.javaType.typeName == "java.lang.String") {
+                    builder.append("$indent${prop.name} = \"${obj}\"\n")
+                } else {
+                    builder.append("$indent${prop.name} = ${obj}\n")
+                }
+            }
         }
         return builder.toString()
     }
@@ -112,9 +122,13 @@ abstract class ItemApi<T> : Tag() {
     abstract fun setPrimaryId(destinationPrimary: T)
     abstract fun primaryKeyEquals(target: T) : Boolean // TODO: Just a property that returns the value of primarykey which can then be .equals?
 
-    abstract fun url() : String // Not a property because reflection to print / JSON would then include it
-
-    abstract val primaryIdForUrl : String
+    enum class HttpRequestType {
+        GET,
+        PUT,
+        POST,
+        DELETE
+    }
+    abstract fun itemUrl(type: HttpRequestType = HttpRequestType.POST) : String // Not a property because reflection to print / JSON would then include it
 
     abstract fun userVisibleName() : String
 
@@ -137,12 +151,12 @@ abstract class ItemApi<T> : Tag() {
         val request : Request
         if (createTputF) {
             request = Request.Builder()
-                .url(url() + primaryIdForUrl) // TODO does this type of API usually work? i.e. requesting the ID of a new object?
+                .url(itemUrl(HttpRequestType.POST)) // TODO does this type of API usually work? i.e. requesting the ID of a new object?
                 .post(getAsJson().toRequestBody(com.example.reqres.MEDIA_TYPE_JSON))
                 .build()
         } else {
             request = Request.Builder()
-                .url(url() + primaryIdForUrl)
+                .url(itemUrl(HttpRequestType.PUT))
                 .put(getAsJson().toRequestBody(com.example.reqres.MEDIA_TYPE_JSON))
                 .build()
         }
@@ -156,12 +170,12 @@ abstract class ItemApi<T> : Tag() {
 
     fun delete(client: OkHttpClient) {
         val request = Request.Builder()
-            .url(url() + primaryIdForUrl) // TODO does this type of API usually work? i.e. requesting the ID of a new object?
+            .url(itemUrl(HttpRequestType.DELETE)) // TODO does this type of API usually work? i.e. requesting the ID of a new object?
             .delete(getAsJson().toRequestBody(MEDIA_TYPE_JSON))
             .build()
 
         client.newCall(request).execute().apply {
-            println("Item ${primaryIdForUrl} ${userVisibleName()} deleted successfully")
+            println("Item ${userVisibleName()} deleted successfully")
             println(this.request.url.toUrl().toString())
             println(this.body?.string())
         }

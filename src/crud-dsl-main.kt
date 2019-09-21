@@ -1,6 +1,6 @@
 import com.example.reqres.users
 import com.garethnz.cruddsl.octopus.ExtensionSettingsValues
-import com.garethnz.cruddsl.octopus.environments
+import com.garethnz.cruddsl.octopus.spaces
 import okhttp3.OkHttpClient
 
 
@@ -8,25 +8,29 @@ val API_KEY = "API-8UUF2C3J5UZZXKLFJZLPVQPMKW"
 
 fun octopusdsl() {
     fun result() =
-        environments {
-            exhaustive = true
-            environment {
-                Id = "Environments-1"
-                Name = "Test"
+        spaces {
+            space {
+                TaskQueueStopped = false
+                Name = "Default Space"
+                Id = "Space-1"
                 Description = ""
-                SortOrder = 0
-                UseGuidedFailure = false
-                AllowDynamicInfrastructure = false
-                SpaceId = "Spaces-1"
-                ExtensionSettings = listOf<ExtensionSettingsValues>()
-                Links = mapOf(
-                    "Self" to "/api/Spaces-1/environments/Environments-1",
-                    "Machines" to "/api/Spaces-1/environments/Environments-1/machines{?skip,take,partialName,roles,isDisabled,healthStatuses,commStyles,tenantIds,tenantTags,shellNames}",
-                    "SinglyScopedVariableDetails" to "/api/Spaces-1/environments/Environments-1/singlyScopedVariableDetails",
-                    "Metadata" to "/api/Spaces-1/environments/Environments-1/metadata"
-                )
+                IsDefault = true
+                environments {
+                    exhaustive = true
+                    environment {
+                        Id = "Environments-1"
+                        Name = "Test"
+                        Description = ""
+                        SortOrder = 0
+                        UseGuidedFailure = false
+                        AllowDynamicInfrastructure = false
+                        SpaceId = "Spaces-1"
+                        ExtensionSettings = listOf<ExtensionSettingsValues>()
+                    }
+                }
             }
         }
+
 //    println("Hello, World!")
 //    fun result() =
 //        html {
