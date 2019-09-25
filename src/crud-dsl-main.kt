@@ -37,11 +37,23 @@ fun octopusdsl() {
                     machine {
                         Endpoint = Endpoint(Thumbprint = "1234567890", Uri = "https://example:10933")
                         EnvironmentIds = arrayOf("Environments-21")
-                        Id = "Machines-1"
+                        Id = "Machines-3"
                         MachinePolicyId = "MachinePolicies-1"
                         Name = "PretendTentacle"
                         Roles = arrayOf("Pretend")
                         StatusSummary = null
+                    }
+                }
+
+                projects {
+                    project {
+                        Id = "Projects-1"
+                        ProjectGroupId = "ProjectGroups-1"
+                        LifecycleId = "Lifecycles-1"
+                        VersioningStrategy = com.garethnz.cruddsl.octopus.VersioningStrategy("#{Octopus.Version.LastMajor}.#{Octopus.Version.LastMinor}.#{Octopus.Version.NextPatch}")
+                        Name = "TestProject"
+                        SpaceId = "Space-1"
+
                     }
                 }
             }

@@ -52,6 +52,7 @@ class SpaceList : ListAPI<Array<Space>, Space>() {
 class Space : ItemApi<Space>() {
     fun environments(init: EnvironmentList.() -> Unit) = initTag(EnvironmentList(), init)
     fun machines(init: MachinesList.() -> Unit) = initTag(MachinesList(), init)
+    fun projects(init: ProjectList.() -> Unit) = initTag(ProjectList(), init)
 
     var Id : String? = null
     var Name : String? = null
@@ -265,43 +266,105 @@ class Machine : ItemApi<Machine>() {
 }
 
 // Project
-class ProjectList : ListAPI<Array<Project>, Project> {
+class ProjectList : ListAPI<Array<Project>, Project>() {
+    fun project(init: Project.() -> Unit) = initTag(Project(), init)
+    override fun url(): String {
+        return url
+    }
 
+    companion object {
+        const val url = "http://localhost:1322/api/projects/all"
+    }
+
+    override fun getJsonAdapter(): JsonAdapter<Array<Project>> {
+        val moshi = Moshi.Builder()
+            // ... add your own JsonAdapters and factories ...
+            .add(KotlinJsonAdapterFactory())
+            .build()
+        return moshi.adapter(Array<Project>::class.java)
+    }
+
+    override fun getChildElements(): MutableList<Project> {
+        return children.filterIsInstance<Project>().toMutableList()
+    }
+
+    override fun listOfChildren(sourceData: Array<Project>): Iterator<Project> {
+        return sourceData.iterator()
+    }
 }
 
 class Project : ItemApi<Project>() {
-    var id: String? = null
-    var variableSetID: String? = null
-    var deploymentProcessID: String? = null
-    var discreteChannelRelease = false
-    var includedLibraryVariableSetIDS: String? = null
-    var defaultToSkipIfAlreadyInstalled = false
-    var tenantedDeploymentMode: String? = null
-    var versioningStrategy: VersioningStrategy? = null
-    var releaseCreationStrategy: String? = null
-    var templates: List<String>? = null
-    var autoDeployReleaseOverrides: List<String>? = null
-    var name: String? = null
-    var slug: String? = null
-    var description: String? = null
-    var isDisabled = false
-    var projectGroupID: String? = null
-    var lifecycleID: String? = null
-    var autoCreateRelease = false
-    var defaultGuidedFailureMode = "EnvironmentDefault"
-    var projectConnectivityPolicy: ProjectConnectivityPolicy? = null
-    var clonedFromProjectID: String? = null
-    var extensionSettings: String? = null
-    var releaseNotesTemplate: String? = null
+    var Id: String? = null
+    var VariableSetId: String? = null
+    var DeploymentProcessId: String? = null
+    var DiscreteChannelRelease = false
+    var IncludedLibraryVariableSetIdS: String? = null
+    var DefaultToSkipIfAlreadyInstalled = false
+    var TenantedDeploymentMode = "Untenanted"
+    var VersioningStrategy: VersioningStrategy? = null
+    var ReleaseCreationStrategy: ReleaseCreationStrategy? = null
+    var Templates: List<String?>? = null
+    var AutoDeployReleaseOverrides: List<String>? = null
+    var Name: String? = null
+    var Slug: String? = null
+    var Description: String? = null
+    var IsDisabled = false
+    var ProjectGroupId: String? = null
+    var LifecycleId: String? = null
+    var AutoCreateRelease = false
+    var DefaultGuidedFailureMode = "EnvironmentDefault"
+    var ProjectConnectivityPolicy: ProjectConnectivityPolicy? = null
+    var ClonedFromProjectId: String? = null
+    var ExtensionSettings: Array<String>? = null
+    var ReleaseNotesTemplate: String? = null
+    var SpaceId: String? = null // TODO: Get from the parent Space object would be.. neat
+
+    override fun setPrimaryId(destinationPrimary: Project) {
+        Id = destinationPrimary.Id
+    }
+
+    override fun primaryKeyEquals(target: Project): Boolean {
+        return Id == target.Id
+    }
+
+    override fun itemUrl(type: HttpRequestType): String {
+        return when(type) {
+            HttpRequestType.POST -> url
+            HttpRequestType.GET,HttpRequestType.PUT,HttpRequestType.DELETE -> url + Id
+        }
+    }
+
+    companion object {
+        const val url = "http://localhost:1322/api/projects/" // TODO: end slash not required for POST, is required when PUT/DELETE and including the id
+    }
+
+    override fun userVisibleName(): String {
+        return Name!!
+    }
+
+    override fun getAsJson(): String {
+        val moshi = Moshi.Builder()
+            // ... add your own JsonAdapters and factories ...
+            .add(KotlinJsonAdapterFactory())
+            .build()
+        val jsonAdapter = moshi.adapter(Project::class.java)
+        return jsonAdapter.toJson(this)
+    }
 }
 
 data class ProjectConnectivityPolicy (
-    val skipMachineBehavior: String,
-    val targetRoles: List<String?>,
-    val allowDeploymentsToNoTargets: Boolean,
-    val excludeUnhealthyTargets: Boolean
+    val SkipMachineBehavior: String,
+    val TargetRoles: List<String?>,
+    val AllowDeploymentsToNoTargets: Boolean,
+    val ExcludeUnhealthyTargets: Boolean
 )
 
 data class VersioningStrategy (
-    val template: String
+    val Template: String
+)
+
+data class ReleaseCreationStrategy (
+    val ChannelId: String?,
+    val ReleaseCreationPackage: String?,
+    val ReleaseCreationPackageStepId: String?
 )
