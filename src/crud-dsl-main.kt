@@ -1,7 +1,5 @@
 import com.example.reqres.users
-import com.garethnz.cruddsl.octopus.Endpoint
-import com.garethnz.cruddsl.octopus.ExtensionSettingsValues
-import com.garethnz.cruddsl.octopus.spaces
+import com.garethnz.cruddsl.octopus.*
 import okhttp3.OkHttpClient
 
 
@@ -54,6 +52,46 @@ fun octopusdsl() {
                         Name = "TestProject"
                         SpaceId = "Space-1"
 
+                        // ACTUALLY the project has a 'DeploymentProcessId' which references this below...
+                        deploymentprocess {
+                            Id = "deploymentprocess-Projects-1"
+                            ProjectId = "Projects-1"
+                            Steps = arrayOf(
+                                Step(
+                                    Id= "29194910-6f43-4f9f-898c-ee992be3f007",
+                                    Name = "TestStep",
+                                    PackageRequirement = "LetOctopusDecide",
+                                    Properties = mapOf("Octopus.Action.TargetRoles" to "Pretend"),
+                                    Condition = "Success",
+                                    StartTrigger = "StartAfterPrevious",
+                                    Actions = arrayOf(
+                                        Action(
+                                            Id = "846a2dda-d097-4167-862d-6a32c008d009",
+                                            Name = "TestStep",
+                                            ActionType = "Octopus.Script",
+                                            IsDisabled = false,
+                                            CanBeUsedForProjectVersioning = false,
+                                            IsRequired = false,
+                                            WorkerPoolId = null,
+                                            Environments = arrayOf(),
+                                            ExcludedEnvironments = arrayOf(),
+                                            Channels = arrayOf(),
+                                            TenantTags = arrayOf(),
+                                            Packages = arrayOf(),
+                                            Properties = mapOf(
+                                                "Octopus.Action.RunOnServer" to "false",
+                                                "Octopus.Action.Script.ScriptSource" to "Inline",
+                                                "Octopus.Action.Script.Syntax" to "Bash",
+                                                "Octopus.Action.Script.ScriptBody" to "echo \"Hello World\""
+                                            )
+                                        )
+                                    )
+                                )
+                            )
+                            Version = 1
+                            LastSnapshotId = null
+                            SpaceId = "Spaces-1"
+                        }
                     }
                 }
             }

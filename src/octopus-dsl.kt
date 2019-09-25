@@ -12,6 +12,7 @@ import com.squareup.moshi.JsonAdapter
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import okhttp3.OkHttpClient
+import okhttp3.Request
 
 // Spaces
 // This is also the top level entry point
@@ -94,14 +95,6 @@ class Space : ItemApi<Space>() {
 
     companion object {
         const val url = "http://localhost:1322/api/spaces/"
-    }
-
-    override fun applyToServer(client: OkHttpClient, target: Space?) {
-        super.applyToServer(client, target)
-
-        children.forEach{
-            it.applyToServer(client)
-        }
     }
 }
 
@@ -294,6 +287,8 @@ class ProjectList : ListAPI<Array<Project>, Project>() {
 }
 
 class Project : ItemApi<Project>() {
+    fun deploymentprocess(init: DeploymentProcess.() -> Unit) = initTag(DeploymentProcess(), init)
+
     var Id: String? = null
     var VariableSetId: String? = null
     var DeploymentProcessId: String? = null
@@ -367,4 +362,104 @@ data class ReleaseCreationStrategy (
     val ChannelId: String?,
     val ReleaseCreationPackage: String?,
     val ReleaseCreationPackageStepId: String?
+)
+
+// Deployment Process
+class DeploymentProcess : ItemApi<DeploymentProcess>() {
+    var Id: String? = null
+    var ProjectId: String? = null
+    var Steps: Array<Step>? = null
+    var Version: Long = 1
+    var LastSnapshotId: String? = null
+    var SpaceId: String? = null
+    var Links: Links? = null
+
+    override fun setPrimaryId(destinationPrimary: DeploymentProcess) {
+        Id = destinationPrimary.Id
+    }
+
+    override fun primaryKeyEquals(target: DeploymentProcess): Boolean {
+        return Id == target.Id
+    }
+
+    override fun itemUrl(type: HttpRequestType): String {
+        return when(type) {
+            HttpRequestType.POST -> url
+            HttpRequestType.GET,HttpRequestType.PUT,HttpRequestType.DELETE -> url + Id
+        }
+    }
+
+    companion object {
+        const val url = "http://localhost:1322/api/deploymentprocesses/" // TODO: end slash not required for POST, is required when PUT/DELETE and including the id
+    }
+
+    override fun userVisibleName(): String {
+        return Id!!
+    }
+
+    override fun getAsJson(): String {
+        val moshi = Moshi.Builder()
+            // ... add your own JsonAdapters and factories ...
+            .add(KotlinJsonAdapterFactory())
+            .build()
+        val jsonAdapter = moshi.adapter(DeploymentProcess::class.java)
+        return jsonAdapter.toJson(this)
+    }
+
+    // TODO: Becuase parent is not a list, it can't get the target object for us
+    override fun applyToServer(client: OkHttpClient) {
+
+        val moshi = Moshi.Builder()
+            // ... add your own JsonAdapters and factories ...
+            .add(KotlinJsonAdapterFactory())
+            .build()
+        val adapter = moshi.adapter(DeploymentProcess::class.java)
+
+        val request = Request.Builder()
+            .url(url(GET))
+            .build()
+
+        var response: S?
+        client.newCall(request).execute().apply {
+            println(this.request.url.toUrl().toString())
+            response = getJsonAdapter().fromJson(this.body?.source()!!)
+            //println( usersResponse )
+        }
+
+        super.applyToServer(client)
+    }
+}
+
+// TODO: If the data classes were in order with JSON we could copy - paste - adjust easier into DSL
+data class Links (
+    val Self: String,
+    val Project: String,
+    val Template: String
+)
+
+data class Step (
+    val Id: String? = null,
+    val Name: String,
+    val Properties: Map<String,String>,
+    val Condition: String,
+    val StartTrigger: String,
+    val PackageRequirement: String,
+    val Actions: Array<Action>
+)
+
+data class Action (
+    val Id: String? = null,
+    val ActionType: String,
+    val Name: String,
+    val Environments: Array<String?>,
+    val ExcludedEnvironments: Array<String?>,
+    val Channels: Array<String?>,
+    val TenantTags: Array<String?>,
+    val Properties: Map<String,String>,
+    val Packages: Array<String?>,
+    val IsDisabled: Boolean,
+    val CanBeUsedForProjectVersioning: Boolean,
+    val IsRequired: Boolean,
+    val Links: String? = null,
+    val WorkerPoolId: String? = null
 )

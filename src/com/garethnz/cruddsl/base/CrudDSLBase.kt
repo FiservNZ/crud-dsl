@@ -1,5 +1,6 @@
 package com.garethnz.cruddsl.base
 
+import com.garethnz.cruddsl.octopus.Space
 import com.squareup.moshi.JsonAdapter
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
@@ -117,8 +118,10 @@ abstract class ListAPI<S,C : ItemApi<C>>(
 }
 
 // TODO: NOTE: T == Subclass for now
+// Allowed to have children, but matching won't be done on them as if from a list
 abstract class ItemApi<T> : Tag() {
-    final override fun applyToServer(client: OkHttpClient) {
+    // Only override this if you want to get the object needed to match against
+    override fun applyToServer(client: OkHttpClient) {
         applyToServer(client, null)
     }
 
@@ -137,7 +140,7 @@ abstract class ItemApi<T> : Tag() {
 
     abstract fun getAsJson(): String
 
-    open fun applyToServer(client: OkHttpClient, target: T?) {
+    fun applyToServer(client: OkHttpClient, target: T?) {
         var createTputF = true
         // This would compare an instance of user from https://reqres.in/api/users/2 with the current object. CREATE / UPDATE as needed
         // Just take the ID of this and then do a PUT? if there are any other differences
@@ -169,6 +172,10 @@ abstract class ItemApi<T> : Tag() {
             println(this.request.url.toUrl().toString())
             println("Create? ${createTputF} call successful")
             println(this.body?.string())
+        }
+
+        children.forEach{
+            it.applyToServer(client)
         }
     }
 
