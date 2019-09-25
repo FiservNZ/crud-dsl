@@ -1,4 +1,5 @@
 import com.example.reqres.users
+import com.garethnz.cruddsl.octopus.Endpoint
 import com.garethnz.cruddsl.octopus.ExtensionSettingsValues
 import com.garethnz.cruddsl.octopus.spaces
 import okhttp3.OkHttpClient
@@ -11,14 +12,17 @@ fun octopusdsl() {
         spaces {
             space {
                 TaskQueueStopped = false
-                Name = "Default Space"
-                Id = "Space-1"
+                Name = "Space 1"
+                Id = "Spaces-1"
                 Description = ""
                 IsDefault = true
+                SpaceManagersTeams = arrayOf("teams-administrators",
+                                            "teams-managers",
+                                            "teams-spacemanagers-Spaces-1")
                 environments {
                     exhaustive = true
                     environment {
-                        Id = "Environments-1"
+                        Id = "Environments-21"
                         Name = "Test"
                         Description = ""
                         SortOrder = 0
@@ -26,6 +30,18 @@ fun octopusdsl() {
                         AllowDynamicInfrastructure = false
                         SpaceId = "Spaces-1"
                         ExtensionSettings = listOf<ExtensionSettingsValues>()
+                    }
+                }
+
+                machines {
+                    machine {
+                        Endpoint = Endpoint(Thumbprint = "1234567890", Uri = "https://example:10933")
+                        EnvironmentIds = arrayOf("Environments-21")
+                        Id = "Machines-1"
+                        MachinePolicyId = "MachinePolicies-1"
+                        Name = "PretendTentacle"
+                        Roles = arrayOf("Pretend")
+                        StatusSummary = null
                     }
                 }
             }

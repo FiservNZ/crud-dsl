@@ -30,7 +30,7 @@ abstract class Tag() : Element {
     }
 
     override fun render(builder: StringBuilder, indent: String) {
-        var name = this::class.simpleName!!.toLowerCase().replace("list","s")
+        val name = this::class.simpleName!!.toLowerCase().replace("list","s")
         builder.append("$indent${name} {${renderAttributes(indent+"  ")}")
         for (c in children) {
             c.render(builder, indent + "  ")
@@ -49,6 +49,9 @@ abstract class Tag() : Element {
             obj?.let {
                 if (prop.returnType.javaType.typeName == "java.lang.String") {
                     builder.append("$indent${prop.name} = \"${obj}\"\n")
+                } else if (prop.returnType.javaType.typeName == "java.lang.String[]") {
+                    val objArray = obj as Array<String>
+                    builder.append("$indent${prop.name} = ${objArray.joinToString("\", \"", prefix = "[\"", postfix = "\"]")}\n")
                 } else {
                     builder.append("$indent${prop.name} = ${obj}\n")
                 }
@@ -115,7 +118,7 @@ abstract class ListAPI<S,C : ItemApi<C>>(
 
 // TODO: NOTE: T == Subclass for now
 abstract class ItemApi<T> : Tag() {
-    override fun applyToServer(client: OkHttpClient) {
+    final override fun applyToServer(client: OkHttpClient) {
         applyToServer(client, null)
     }
 
@@ -134,7 +137,7 @@ abstract class ItemApi<T> : Tag() {
 
     abstract fun getAsJson(): String
 
-    fun applyToServer(client: OkHttpClient, target: T?) {
+    open fun applyToServer(client: OkHttpClient, target: T?) {
         var createTputF = true
         // This would compare an instance of user from https://reqres.in/api/users/2 with the current object. CREATE / UPDATE as needed
         // Just take the ID of this and then do a PUT? if there are any other differences
@@ -144,6 +147,7 @@ abstract class ItemApi<T> : Tag() {
         }
 
         if (this.toString().equals(target.toString())) {
+            // TODO: Doesn't work for Spaces-1
             println("${this::class.simpleName} ${userVisibleName()} already exists and is equal. Skipping")
             return // No Actions Needed
         }
@@ -162,8 +166,8 @@ abstract class ItemApi<T> : Tag() {
         }
 
         client.newCall(request).execute().apply {
-            println("Create? ${createTputF} call successful")
             println(this.request.url.toUrl().toString())
+            println("Create? ${createTputF} call successful")
             println(this.body?.string())
         }
     }

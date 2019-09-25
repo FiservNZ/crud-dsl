@@ -57,7 +57,7 @@ class UserList : ListAPI<UsersResponse, User>() {
             // ... add your own JsonAdapters and factories ...
             .add(KotlinJsonAdapterFactory())
             .build()
-        return moshi.adapter<UsersResponse>(UsersResponse::class.java)
+        return moshi.adapter(UsersResponse::class.java)
     }
 
     override fun getChildElements(): MutableList<User> {
@@ -102,7 +102,7 @@ class User : ItemApi<User>() {
             // ... add your own JsonAdapters and factories ...
             .add(KotlinJsonAdapterFactory())
             .build()
-        val jsonAdapter = moshi.adapter<User>(User::class.java)
+        val jsonAdapter = moshi.adapter(User::class.java)
 
         return jsonAdapter.toJson(this)
     }
