@@ -2,7 +2,6 @@ package com.example.reqres
 
 import com.garethnz.cruddsl.base.ItemApi
 import com.garethnz.cruddsl.base.ListAPI
-import com.garethnz.cruddsl.octopus.Environment
 import com.squareup.moshi.JsonAdapter
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
@@ -88,7 +87,7 @@ class User : ItemApi<User>() {
 
     override fun itemUrl(type: HttpRequestType): String {
         return when(type) {
-            HttpRequestType.POST -> Environment.url
+            HttpRequestType.POST -> url
             HttpRequestType.GET,HttpRequestType.PUT,HttpRequestType.DELETE -> url + id
         }
     }

@@ -1,6 +1,5 @@
 package com.garethnz.cruddsl.base
 
-import com.garethnz.cruddsl.octopus.Space
 import com.squareup.moshi.JsonAdapter
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
@@ -149,9 +148,13 @@ abstract class ItemApi<T> : Tag() {
             createTputF = false
         }
 
-        if (this.toString().equals(target.toString())) {
-            // TODO: Doesn't work for Spaces-1
+        if (this.equals(target)) {
             println("${this::class.simpleName} ${userVisibleName()} already exists and is equal. Skipping")
+
+            // Check children, but no actions needed for this item
+            children.forEach{
+                it.applyToServer(client)
+            }
             return // No Actions Needed
         }
 
@@ -170,8 +173,14 @@ abstract class ItemApi<T> : Tag() {
 
         client.newCall(request).execute().apply {
             println(this.request.url.toUrl().toString())
-            println("Create? ${createTputF} call successful")
-            println(this.body?.string())
+            if (this.isSuccessful) {
+                println("Create? ${createTputF} call successful")
+                println(this.body?.string())
+            } else {
+                println("Create? ${createTputF} call failed")
+                println("Request: ${getAsJson()}")
+                println("Response: ${this.body?.string()}")
+            }
         }
 
         children.forEach{

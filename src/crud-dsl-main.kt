@@ -1,5 +1,9 @@
 import com.example.reqres.users
-import com.garethnz.cruddsl.octopus.*
+import com.garethnz.cruddsl.octopusdeploy.spaces
+import com.garethnz.cruddsl.octopusdeploy.bashScript
+import com.garethnz.cruddsl.octopusdeploy.Endpoint
+import com.garethnz.cruddsl.octopusdeploy.Step
+import com.garethnz.cruddsl.octopusdeploy.VersioningStrategy
 import okhttp3.OkHttpClient
 
 
@@ -27,19 +31,18 @@ fun octopusdsl() {
                         UseGuidedFailure = false
                         AllowDynamicInfrastructure = false
                         SpaceId = "Spaces-1"
-                        ExtensionSettings = listOf<ExtensionSettingsValues>()
+                        ExtensionSettings = listOf()
                     }
                 }
 
                 machines {
                     machine {
-                        Endpoint = Endpoint(Thumbprint = "1234567890", Uri = "https://example:10933")
+                        Endpoint = Endpoint(Thumbprint = "1234567890", Uri = "https://example:10933/")
                         EnvironmentIds = arrayOf("Environments-21")
                         Id = "Machines-3"
                         MachinePolicyId = "MachinePolicies-1"
                         Name = "PretendTentacle"
                         Roles = arrayOf("Pretend")
-                        StatusSummary = null
                     }
                 }
 
@@ -48,9 +51,11 @@ fun octopusdsl() {
                         Id = "Projects-1"
                         ProjectGroupId = "ProjectGroups-1"
                         LifecycleId = "Lifecycles-1"
-                        VersioningStrategy = com.garethnz.cruddsl.octopus.VersioningStrategy("#{Octopus.Version.LastMajor}.#{Octopus.Version.LastMinor}.#{Octopus.Version.NextPatch}")
                         Name = "TestProject"
-                        SpaceId = "Space-1"
+                        Slug = "testproject"
+                        SpaceId = "Spaces-1"
+                        VariableSetId = "variableset-Projects-1"
+                        DeploymentProcessId = "deploymentprocess-Projects-1"
 
                         // ACTUALLY the project has a 'DeploymentProcessId' which references this below...
                         deploymentprocess {
@@ -58,37 +63,16 @@ fun octopusdsl() {
                             ProjectId = "Projects-1"
                             Steps = arrayOf(
                                 Step(
-                                    Id= "29194910-6f43-4f9f-898c-ee992be3f007",
                                     Name = "TestStep",
                                     PackageRequirement = "LetOctopusDecide",
                                     Properties = mapOf("Octopus.Action.TargetRoles" to "Pretend"),
                                     Condition = "Success",
                                     StartTrigger = "StartAfterPrevious",
                                     Actions = arrayOf(
-                                        Action(
-                                            Id = "846a2dda-d097-4167-862d-6a32c008d009",
-                                            Name = "TestStep",
-                                            ActionType = "Octopus.Script",
-                                            IsDisabled = false,
-                                            CanBeUsedForProjectVersioning = false,
-                                            IsRequired = false,
-                                            WorkerPoolId = null,
-                                            Environments = arrayOf(),
-                                            ExcludedEnvironments = arrayOf(),
-                                            Channels = arrayOf(),
-                                            TenantTags = arrayOf(),
-                                            Packages = arrayOf(),
-                                            Properties = mapOf(
-                                                "Octopus.Action.RunOnServer" to "false",
-                                                "Octopus.Action.Script.ScriptSource" to "Inline",
-                                                "Octopus.Action.Script.Syntax" to "Bash",
-                                                "Octopus.Action.Script.ScriptBody" to "echo \"Hello World\""
-                                            )
-                                        )
+                                        bashScript("TestStep", "echo \"Hello World OHH YUS!\"")
                                     )
                                 )
                             )
-                            Version = 1
                             LastSnapshotId = null
                             SpaceId = "Spaces-1"
                         }
