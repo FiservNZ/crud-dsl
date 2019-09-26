@@ -104,7 +104,6 @@ abstract class ListAPI<S,C : ItemApi<C>>(
                 else {
 
                     if (exhaustive) {
-                        // TODO: Delete user from the server as it doesn't match something we want to add
                         element.delete(client)
                     }
                 }
@@ -161,7 +160,7 @@ abstract class ItemApi<T> : Tag() {
         val request : Request
         if (createTputF) {
             request = Request.Builder()
-                .url(itemUrl(HttpRequestType.POST)) // TODO does this type of API usually work? i.e. requesting the ID of a new object?
+                .url(itemUrl(HttpRequestType.POST))
                 .post(getAsJson().toRequestBody(com.example.reqres.MEDIA_TYPE_JSON))
                 .build()
         } else {
@@ -189,8 +188,9 @@ abstract class ItemApi<T> : Tag() {
     }
 
     fun delete(client: OkHttpClient) {
+        // TODO: Not really tested this
         val request = Request.Builder()
-            .url(itemUrl(HttpRequestType.DELETE)) // TODO does this type of API usually work? i.e. requesting the ID of a new object?
+            .url(itemUrl(HttpRequestType.DELETE))
             .delete(getAsJson().toRequestBody(MEDIA_TYPE_JSON))
             .build()
 

@@ -121,7 +121,6 @@ class User : ItemApi<User>() {
 
         other as User
 
-        // TODO: if (attributes.keys.map)
         if (id != other.id) return false
         if (first_name != other.first_name) return false
         if (last_name != other.last_name) return false

@@ -73,7 +73,7 @@ class Machine : ItemApi<Machine>() {
     }
 
     companion object {
-        const val url = "http://localhost:1322/api/machines/" // TODO: end slash not required for POST, is required when PUT/DELETE and including the id
+        const val url = "http://localhost:1322/api/machines/"
     }
 
     override fun userVisibleName(): String {

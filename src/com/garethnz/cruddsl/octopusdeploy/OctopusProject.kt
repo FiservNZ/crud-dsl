@@ -60,7 +60,7 @@ class Project : ItemApi<Project>() {
     var ClonedFromProjectId: String? = null
     var ExtensionSettings: Array<String> = arrayOf()
     var ReleaseNotesTemplate: String? = null
-    var SpaceId: String? = null // TODO: Get from the parent Space object would be.. neat
+    var SpaceId: String? = null
 
     override fun setPrimaryId(destinationPrimary: Project) {
         Id = destinationPrimary.Id
@@ -78,7 +78,7 @@ class Project : ItemApi<Project>() {
     }
 
     companion object {
-        const val url = "http://localhost:1322/api/projects/" // TODO: end slash not required for POST, is required when PUT/DELETE and including the id
+        const val url = "http://localhost:1322/api/projects/"
     }
 
     override fun userVisibleName(): String {

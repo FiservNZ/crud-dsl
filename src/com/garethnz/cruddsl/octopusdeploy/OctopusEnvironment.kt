@@ -56,7 +56,7 @@ class Environment() : ItemApi<Environment>() {
     }
 
     companion object {
-        const val url = "http://localhost:1322/api/environments/" // TODO: end slash not required for POST, is required when PUT/DELETE and including the id
+        const val url = "http://localhost:1322/api/environments/"
     }
 
     override fun setPrimaryId(destinationPrimary: Environment) {
