@@ -1,14 +1,11 @@
 import com.example.reqres.users
-import com.garethnz.cruddsl.octopusdeploy.spaces
-import com.garethnz.cruddsl.octopusdeploy.bashScript
-import com.garethnz.cruddsl.octopusdeploy.Endpoint
-import com.garethnz.cruddsl.octopusdeploy.Step
-import com.garethnz.cruddsl.octopusdeploy.VersioningStrategy
+import com.garethnz.cruddsl.octopusdeploy.*
 import okhttp3.OkHttpClient
 
 
-val API_KEY = "API-8UUF2C3J5UZZXKLFJZLPVQPMKW"
+val API_KEY = "API-AZACHJDLANF6JCYU5GCKJ0VOWCY"
 
+// TODO: Maybe we track Ids just to confirm if things have changed... but we don't NEED them... mostly
 fun octopusdsl() {
     fun result() =
         spaces {
@@ -24,7 +21,7 @@ fun octopusdsl() {
                 environments {
                     exhaustive = true
                     environment {
-                        Id = "Environments-21"
+                        Id = "Environments-1" // Can't be set obv... How to get it to machine config?
                         Name = "Test"
                         Description = ""
                         SortOrder = 0
@@ -37,9 +34,9 @@ fun octopusdsl() {
 
                 machines {
                     machine {
+                        Id = "Machines-1" // As usual can't be set
                         Endpoint = Endpoint(Thumbprint = "1234567890", Uri = "https://example:10933/")
-                        EnvironmentIds = arrayOf("Environments-21")
-                        Id = "Machines-3"
+                        EnvironmentIds = arrayOf("Environments-1")
                         MachinePolicyId = "MachinePolicies-1"
                         Name = "PretendTentacle"
                         Roles = arrayOf("Pretend")
@@ -48,19 +45,12 @@ fun octopusdsl() {
 
                 projects {
                     project {
-                        Id = "Projects-1"
                         ProjectGroupId = "ProjectGroups-1"
                         LifecycleId = "Lifecycles-1"
                         Name = "TestProject"
-                        Slug = "testproject"
                         SpaceId = "Spaces-1"
-                        VariableSetId = "variableset-Projects-1"
-                        DeploymentProcessId = "deploymentprocess-Projects-1"
 
-                        // ACTUALLY the project has a 'DeploymentProcessId' which references this below...
                         deploymentprocess {
-                            Id = "deploymentprocess-Projects-1"
-                            ProjectId = "Projects-1"
                             Steps = arrayOf(
                                 Step(
                                     Name = "TestStep",

@@ -80,15 +80,6 @@ class Space : ItemApi<Space>() {
         return Name!!
     }
 
-    override fun getAsJson(): String {
-        val moshi = Moshi.Builder()
-            // ... add your own JsonAdapters and factories ...
-            .add(KotlinJsonAdapterFactory())
-            .build()
-        val jsonAdapter = moshi.adapter(Space::class.java)
-        return jsonAdapter.toJson(this)
-    }
-
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (javaClass != other?.javaClass) return false

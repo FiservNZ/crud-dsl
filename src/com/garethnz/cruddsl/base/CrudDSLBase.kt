@@ -1,10 +1,13 @@
 package com.garethnz.cruddsl.base
 
 import com.squareup.moshi.JsonAdapter
+import com.squareup.moshi.Moshi
+import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
+import okio.BufferedSource
 import kotlin.reflect.full.memberProperties
 import kotlin.reflect.jvm.javaGetter
 import kotlin.reflect.jvm.javaType
@@ -45,15 +48,18 @@ abstract class Tag() : Element {
                 continue
             }
 
-            val obj = prop.javaGetter?.invoke(this)
-            obj?.let {
-                if (prop.returnType.javaType.typeName == "java.lang.String") {
-                    builder.append("$indent${prop.name} = \"${obj}\"\n")
-                } else if (prop.returnType.javaType.typeName == "java.lang.String[]") {
-                    val objArray = obj as Array<String>
-                    builder.append("$indent${prop.name} = ${objArray.joinToString("\", \"", prefix = "[\"", postfix = "\"]")}\n")
-                } else {
-                    builder.append("$indent${prop.name} = ${obj}\n")
+            prop.javaGetter?.let {
+                it.isAccessible = true
+                val obj = it.invoke(this)
+                obj?.let {
+                    if (prop.returnType.javaType.typeName == "java.lang.String") {
+                        builder.append("$indent${prop.name} = \"${obj}\"\n")
+                    } else if (prop.returnType.javaType.typeName == "java.lang.String[]") {
+                        val objArray = obj as Array<String>
+                        builder.append("$indent${prop.name} = ${objArray.joinToString("\", \"", prefix = "[\"", postfix = "\"]")}\n")
+                    } else {
+                        builder.append("$indent${prop.name} = ${obj}\n")
+                    }
                 }
             }
         }
@@ -123,6 +129,7 @@ abstract class ItemApi<T> : Tag() {
         applyToServer(client, null)
     }
 
+    // NOTE: Any children should be updated if relevant
     abstract fun setPrimaryId(destinationPrimary: T)
     abstract fun primaryKeyEquals(target: T) : Boolean // TODO: Just a property that returns the value of primarykey which can then be .equals?
 
@@ -136,7 +143,25 @@ abstract class ItemApi<T> : Tag() {
 
     abstract fun userVisibleName() : String
 
-    abstract fun getAsJson(): String
+
+
+    fun getAsJson(): String {
+        return getJsonAdapter().toJson(this)
+    }
+
+    fun getJsonAdapter(): JsonAdapter<ItemApi<T>> {
+        val moshi = Moshi.Builder()
+            // ... add your own JsonAdapters and factories ...
+            .add(KotlinJsonAdapterFactory())
+            .build()
+        return moshi.adapter(this.javaClass)
+
+    }
+
+    fun getFromJson(source: BufferedSource?) : T? {
+        return getJsonAdapter().fromJson(source) as T?
+    }
+
 
     fun applyToServer(client: OkHttpClient, target: T?) {
         var createTputF = true
@@ -174,11 +199,12 @@ abstract class ItemApi<T> : Tag() {
             println(this.request.url.toUrl().toString())
             if (this.isSuccessful) {
                 println("Create? ${createTputF} call successful")
-                println(this.body?.string())
+                setPrimaryId(getFromJson(this.body?.source())!!)
             } else {
                 println("Create? ${createTputF} call failed")
                 println("Request: ${getAsJson()}")
                 println("Response: ${this.body?.string()}")
+                throw RuntimeException("Bad State")
             }
         }
 

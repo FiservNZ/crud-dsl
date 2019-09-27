@@ -5,7 +5,6 @@ import com.garethnz.cruddsl.base.ListAPI
 import com.squareup.moshi.JsonAdapter
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
-import okhttp3.OkHttpClient
 
 class ProjectList : ListAPI<Array<Project>, Project>() {
     fun project(init: Project.() -> Unit) = initTag(Project(), init)
@@ -35,11 +34,16 @@ class ProjectList : ListAPI<Array<Project>, Project>() {
 }
 
 class Project : ItemApi<Project>() {
-    fun deploymentprocess(init: DeploymentProcess.() -> Unit) = initTag(DeploymentProcess(), init)
+    fun deploymentprocess(init: DeploymentProcess.() -> Unit) = initTag(DeploymentProcess(ProjectId = Id), init)
 
-    var Id: String? = null
-    var VariableSetId: String? = null
-    var DeploymentProcessId: String? = null
+    // Id can't be set, so don't bother specifying it. We can also get it from the server when we are running as the unique Id is also "Name"
+    // Though if someone changes the Name....
+    private var Id: String? = null // If we need to create then we get a new Id?
+    private val VariableSetId: String
+            get() = "variableset-${Id}"
+    // The DeploymentProcessId don't seem to be able to be changed, so project is correct as to the process ID, and there for use that to set the Id of the below
+    private val DeploymentProcessId: String
+        get() = "deploymentprocess-${Id}"
     var DiscreteChannelRelease = false
     var IncludedLibraryVariableSetIdS: String? = null
     var DefaultToSkipIfAlreadyInstalled = false
@@ -49,7 +53,7 @@ class Project : ItemApi<Project>() {
     var Templates: List<String?> = arrayListOf()
     var AutoDeployReleaseOverrides: List<String>? = arrayListOf()
     var Name: String? = null
-    var Slug: String? = null
+    // TODO: Can't write it... just ignore? var Slug: String? = null
     var Description: String = ""
     var IsDisabled = false
     var ProjectGroupId: String? = null
@@ -64,10 +68,15 @@ class Project : ItemApi<Project>() {
 
     override fun setPrimaryId(destinationPrimary: Project) {
         Id = destinationPrimary.Id
+        children.forEach { element ->
+            if (element is DeploymentProcess) {
+                element.ProjectId = Id
+            }
+        }
     }
 
     override fun primaryKeyEquals(target: Project): Boolean {
-        return Id == target.Id
+        return Name == target.Name
     }
 
     override fun itemUrl(type: HttpRequestType): String {
@@ -83,15 +92,6 @@ class Project : ItemApi<Project>() {
 
     override fun userVisibleName(): String {
         return Name!!
-    }
-
-    override fun getAsJson(): String {
-        val moshi = Moshi.Builder()
-            // ... add your own JsonAdapters and factories ...
-            .add(KotlinJsonAdapterFactory())
-            .build()
-        val jsonAdapter = moshi.adapter(Project::class.java)
-        return jsonAdapter.toJson(this)
     }
 
     override fun equals(other: Any?): Boolean {
@@ -112,7 +112,7 @@ class Project : ItemApi<Project>() {
         if (Templates != other.Templates) return false
         if (AutoDeployReleaseOverrides != other.AutoDeployReleaseOverrides) return false
         if (Name != other.Name) return false
-        if (Slug != other.Slug) return false
+        //if (Slug != other.Slug) return false
         if (Description != other.Description) return false
         if (IsDisabled != other.IsDisabled) return false
         if (ProjectGroupId != other.ProjectGroupId) return false
@@ -141,7 +141,7 @@ class Project : ItemApi<Project>() {
         result = 31 * result + Templates.hashCode()
         result = 31 * result + (AutoDeployReleaseOverrides?.hashCode() ?: 0)
         result = 31 * result + (Name?.hashCode() ?: 0)
-        result = 31 * result + (Slug?.hashCode() ?: 0)
+        //result = 31 * result + (Slug?.hashCode() ?: 0)
         result = 31 * result + Description.hashCode()
         result = 31 * result + IsDisabled.hashCode()
         result = 31 * result + (ProjectGroupId?.hashCode() ?: 0)

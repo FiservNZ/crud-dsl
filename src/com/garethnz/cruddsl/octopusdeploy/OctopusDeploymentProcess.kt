@@ -1,23 +1,22 @@
 package com.garethnz.cruddsl.octopusdeploy
 
 import com.garethnz.cruddsl.base.ItemApi
-import com.squareup.moshi.JsonAdapter
-import com.squareup.moshi.Moshi
-import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import okhttp3.OkHttpClient
 import okhttp3.Request
 
 // Deployment Process
-class DeploymentProcess : ItemApi<DeploymentProcess>() {
-    var Id: String? = null
-    var ProjectId: String? = null
+class DeploymentProcess(var ProjectId: String?) : ItemApi<DeploymentProcess>() {
+    private val Id: String
+        get() = "deploymentprocess-${ProjectId}"
     var Steps: Array<Step> = arrayOf()
     var Version: Long = 1 // TODO: Don't use as property, either 1... or use existing #
     var LastSnapshotId: String? = null
     var SpaceId: String? = null
 
     override fun setPrimaryId(destinationPrimary: DeploymentProcess) {
-        Id = destinationPrimary.Id
+        if (Id != destinationPrimary.Id) {
+            throw RuntimeException("Can't set the id of a DeploymentProcess")
+        }
     }
 
     override fun primaryKeyEquals(target: DeploymentProcess): Boolean {
@@ -39,19 +38,6 @@ class DeploymentProcess : ItemApi<DeploymentProcess>() {
         return Id!!
     }
 
-    fun getJsonAdapter(): JsonAdapter<DeploymentProcess> {
-        val moshi = Moshi.Builder()
-            // ... add your own JsonAdapters and factories ...
-            .add(KotlinJsonAdapterFactory())
-            .build()
-        return moshi.adapter(DeploymentProcess::class.java)
-
-    }
-
-    override fun getAsJson(): String {
-        return getJsonAdapter().toJson(this)
-    }
-
     // TODO: Because parent is not a list, it can't get the target object for us
     override fun applyToServer(client: OkHttpClient) {
         val request = Request.Builder()
@@ -61,7 +47,7 @@ class DeploymentProcess : ItemApi<DeploymentProcess>() {
         val response : DeploymentProcess?
         client.newCall(request).execute().apply {
             println(this.request.url.toUrl().toString())
-            response = getJsonAdapter().fromJson(this.body?.source()!!)
+            response = getFromJson(this.body?.source()!!)
             response?.let {
                 println("Existing item found, updating")
                 Version = response.Version

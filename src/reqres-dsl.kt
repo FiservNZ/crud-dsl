@@ -96,16 +96,6 @@ class User : ItemApi<User>() {
         return email!!
     }
 
-    override fun getAsJson(): String {
-        val moshi = Moshi.Builder()
-            // ... add your own JsonAdapters and factories ...
-            .add(KotlinJsonAdapterFactory())
-            .build()
-        val jsonAdapter = moshi.adapter(User::class.java)
-
-        return jsonAdapter.toJson(this)
-    }
-
     override fun primaryKeyEquals(other: User): Boolean {
 
         if (id == null)
