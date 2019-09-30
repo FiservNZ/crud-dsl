@@ -119,6 +119,29 @@ abstract class ListAPI<S,C : ItemApi<C>>(
         childrenToProcess.forEach { element: C -> element.applyToServer(client) }
         // CREATE CHILD, LET CHILD Update the existing instance, DELETE user on server
     }
+
+    fun readFromServer(client: OkHttpClient) {
+        val request = Request.Builder()
+            .url(url())
+            .build()
+
+        var response: S?
+        client.newCall(request).execute().apply {
+            println(this.request.url.toUrl().toString())
+            response = getJsonAdapter().fromJson(this.body?.source()!!)
+            response?.let {
+                if (it is Array<*>) {
+                    it.forEach {
+                        if (it is ItemApi<*>) {
+                            it.readFromServer(client)
+                            children.add(it)
+                        }
+                    }
+                }
+
+            }
+        }
+    }
 }
 
 // TODO: NOTE: T == Subclass for now
@@ -159,7 +182,7 @@ abstract class ItemApi<T> : Tag() {
     }
 
     fun getFromJson(source: BufferedSource?) : T? {
-        return getJsonAdapter().fromJson(source) as T?
+        return getJsonAdapter().fromJson(source!!) as T?
     }
 
 
@@ -186,12 +209,12 @@ abstract class ItemApi<T> : Tag() {
         if (createTputF) {
             request = Request.Builder()
                 .url(itemUrl(HttpRequestType.POST))
-                .post(getAsJson().toRequestBody(com.example.reqres.MEDIA_TYPE_JSON))
+                .post(getAsJson().toRequestBody(MEDIA_TYPE_JSON))
                 .build()
         } else {
             request = Request.Builder()
                 .url(itemUrl(HttpRequestType.PUT))
-                .put(getAsJson().toRequestBody(com.example.reqres.MEDIA_TYPE_JSON))
+                .put(getAsJson().toRequestBody(MEDIA_TYPE_JSON))
                 .build()
         }
 
@@ -225,5 +248,10 @@ abstract class ItemApi<T> : Tag() {
             println(this.request.url.toUrl().toString())
             println(this.body?.string())
         }
+    }
+
+    // Default that does nothing as there are no children to get
+    open fun readFromServer(client: OkHttpClient) {
+
     }
 }

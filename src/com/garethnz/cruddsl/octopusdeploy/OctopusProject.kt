@@ -5,6 +5,7 @@ import com.garethnz.cruddsl.base.ListAPI
 import com.squareup.moshi.JsonAdapter
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
+import okhttp3.OkHttpClient
 
 class ProjectList : ListAPI<Array<Project>, Project>() {
     fun project(init: Project.() -> Unit) = initTag(Project(), init)
@@ -130,8 +131,8 @@ class Project : ItemApi<Project>() {
 
     override fun hashCode(): Int {
         var result = Id?.hashCode() ?: 0
-        result = 31 * result + (VariableSetId?.hashCode() ?: 0)
-        result = 31 * result + (DeploymentProcessId?.hashCode() ?: 0)
+        result = 31 * result + VariableSetId.hashCode()
+        result = 31 * result + DeploymentProcessId.hashCode()
         result = 31 * result + DiscreteChannelRelease.hashCode()
         result = 31 * result + (IncludedLibraryVariableSetIdS?.hashCode() ?: 0)
         result = 31 * result + DefaultToSkipIfAlreadyInstalled.hashCode()
@@ -156,7 +157,11 @@ class Project : ItemApi<Project>() {
         return result
     }
 
-
+    override fun readFromServer(client: OkHttpClient) {
+        val result = deploymentprocess { }
+        // TODO: READ deployment process
+        result.readFromServer(client)
+    }
 }
 
 data class ProjectConnectivityPolicy (

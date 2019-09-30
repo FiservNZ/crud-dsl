@@ -1,5 +1,7 @@
-import com.example.reqres.users
-import com.garethnz.cruddsl.octopusdeploy.*
+import com.garethnz.cruddsl.octopusdeploy.Endpoint
+import com.garethnz.cruddsl.octopusdeploy.Step
+import com.garethnz.cruddsl.octopusdeploy.bashScript
+import com.garethnz.cruddsl.octopusdeploy.spaces
 import okhttp3.OkHttpClient
 
 
@@ -114,62 +116,32 @@ fun octopusdsl() {
     result().applyToServer(client)
 }
 
-fun reqresdsl() {
-    fun result() =
-        users {
-            exhaustive = true
-            user {
-                id = 1 // Things like primary keys will change. if it doesn't exist, the api to create a new one will not match this id
-                email = "george.bluth@reqres.in"
-                first_name = "George"
-                last_name = "Bluth"
-                avatar = "https://s3.amazonaws.com/uifaces/faces/twitter/calebogden/128.jpg"
-            }
-            user {
-                id = 6
-                email = "tracey.ramos@newemail.com"
-                first_name = "Tracey"
-                last_name = "Ramos"
-                avatar = "https://s3.amazonaws.com/uifaces/faces/twitter/bigmancho/128.jpg"
-            }
-            user {
-                id = 200
-                email = "gareth@garethnz.com"
-                first_name = "Gareth"
-                last_name = "NZ"
-                avatar = "https://s3.amazonaws.com/uifaces/faces/twitter/bigmancho/128.jpg"
-            }
+fun readOctopusDSL() {
+    val result = spaces {
+
+    }
+
+    val client = OkHttpClient.Builder().apply {
+        addInterceptor {
+                chain ->
+            val original = chain.request()
+
+            // Request customization: add request headers
+            val requestBuilder = original.newBuilder()
+                .header("X-Octopus-ApiKey", API_KEY)
+
+            val request = requestBuilder.build()
+            chain.proceed(request)
         }
-//    println("Hello, World!")
-//    fun result() =
-//        html {
-//            head {
-//                title { +"XML encoding with Kotlin" }
-//            }
-//            body {
-//                h1 { +"XML encoding with Kotlin" }
-//                p { +"this format can be used as an alternative markup to XML" }
-//
-//                // an element with attributes and text content
-//                a(href = "http://kotlinlang.org") { +"Kotlin" }
-//
-//                // mixed content
-//                p {
-//                    +"This is some"
-//                    b { +"mixed" }
-//                    +"text. For more see the"
-//                    a(href = "http://kotlinlang.org") { +"Kotlin" }
-//                    +"project"
-//                }
-//                p { +"some text" }
-//            }
-//        }
-//
-    println( result().toString() )
-    result().applyToServer(OkHttpClient())
+    }.build()
+    result.readFromServer(client)
+    println( result.toString() )
+
 }
 
 fun main(args : Array<String>) {
-    octopusdsl()
+    readOctopusDSL()
+    //octopusdsl()
+    // TODO: Read OctopusDSL from server
     //reqresdsl()
 }
