@@ -34,8 +34,12 @@ class EnvironmentList : ListAPI<Array<Environment>, Environment>() {
     }
 }
 
-data class ExtensionSettingsValues(val extensionId: String, val values: Array<String>)
-class Environment() : ItemApi<Environment>() {
+data class ExtensionSettingsValues(val extensionId: String, val values: Array<String>) {
+    override fun toString(): String {
+        return super.toString() // TODO:
+    }
+}
+class Environment : ItemApi<Environment>() {
     var SpaceId : String? = null
     var ExtensionSettings: List<ExtensionSettingsValues>? = null
     var Name : String? = null

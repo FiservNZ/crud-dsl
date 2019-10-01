@@ -5,7 +5,7 @@ import com.garethnz.cruddsl.octopusdeploy.spaces
 import okhttp3.OkHttpClient
 
 
-val API_KEY = "API-AZACHJDLANF6JCYU5GCKJ0VOWCY"
+const val API_KEY = "API-AZACHJDLANF6JCYU5GCKJ0VOWCY"
 
 // TODO: Maybe we track Ids just to confirm if things have changed... but we don't NEED them... mostly
 fun octopusdsl() {
@@ -50,7 +50,7 @@ fun octopusdsl() {
                         ProjectGroupId = "ProjectGroups-1"
                         LifecycleId = "Lifecycles-1"
                         Name = "TestProject"
-                        SpaceId = "Spaces-1"
+                        //SpaceId = "Spaces-1"
 
                         deploymentprocess {
                             Steps = arrayOf(
@@ -66,7 +66,7 @@ fun octopusdsl() {
                                 )
                             )
                             LastSnapshotId = null
-                            SpaceId = "Spaces-1"
+                            //SpaceId = "Spaces-1"
                         }
                     }
                 }
@@ -134,14 +134,14 @@ fun readOctopusDSL() {
             chain.proceed(request)
         }
     }.build()
-    result.readFromServer(client)
-    println( result.toString() )
+    val fromServer = result.readFromServer(client)
+    println( fromServer.toString() )
 
 }
 
-fun main(args : Array<String>) {
-    readOctopusDSL()
-    //octopusdsl()
+fun main() {
+    //readOctopusDSL()
+    octopusdsl()
     // TODO: Read OctopusDSL from server
     //reqresdsl()
 }

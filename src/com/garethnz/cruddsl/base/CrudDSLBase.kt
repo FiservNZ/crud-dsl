@@ -23,7 +23,7 @@ interface Element {
 annotation class CrudDSLMarker
 
 @CrudDSLMarker
-abstract class Tag() : Element {
+abstract class Tag : Element {
     val children = arrayListOf<Element>()
 
     protected fun <T : Element> initTag(tag: T, init: T.() -> Unit): T {
@@ -34,9 +34,9 @@ abstract class Tag() : Element {
 
     override fun render(builder: StringBuilder, indent: String) {
         val name = this::class.simpleName!!.toLowerCase().replace("list","s")
-        builder.append("$indent${name} {${renderAttributes(indent+"  ")}")
+        builder.append("$indent$name {${renderAttributes("$indent  ")}")
         for (c in children) {
-            c.render(builder, indent + "  ")
+            c.render(builder, "$indent  ")
         }
         builder.append("$indent}\n")
     }
@@ -44,7 +44,7 @@ abstract class Tag() : Element {
     private fun renderAttributes(indent: String): String {
         val builder = StringBuilder("\n")
         for (prop in this::class.memberProperties) {
-            if (prop.name.equals("attributes") || prop.name.equals("children")) {
+            if (prop.name == "attributes" || prop.name == "children") {
                 continue
             }
 
@@ -53,12 +53,15 @@ abstract class Tag() : Element {
                 val obj = it.invoke(this)
                 obj?.let {
                     if (prop.returnType.javaType.typeName == "java.lang.String") {
-                        builder.append("$indent${prop.name} = \"${obj}\"\n")
-                    } else if (prop.returnType.javaType.typeName == "java.lang.String[]") {
-                        val objArray = obj as Array<String>
-                        builder.append("$indent${prop.name} = ${objArray.joinToString("\", \"", prefix = "[\"", postfix = "\"]")}\n")
+                        builder.append("$indent${prop.name} = \"$obj\"\n")
+                    } else if (prop.returnType.javaType.typeName.endsWith("[]")) {
+                        val objArray = obj as Array<*>
+                        builder.append("$indent${prop.name} = arrayOf(\n" +
+                                objArray.joinToString(prefix = indent+"  ", separator = ", \n") +
+                        ")\n")
+                    // TODO: starts with java.util.List<"
                     } else {
-                        builder.append("$indent${prop.name} = ${obj}\n")
+                        builder.append("$indent${prop.name} = $obj\n")
                     }
                 }
             }
@@ -120,7 +123,7 @@ abstract class ListAPI<S,C : ItemApi<C>>(
         // CREATE CHILD, LET CHILD Update the existing instance, DELETE user on server
     }
 
-    fun readFromServer(client: OkHttpClient) {
+    fun readFromServer(client: OkHttpClient) : ListAPI<S,C> {
         val request = Request.Builder()
             .url(url())
             .build()
@@ -129,24 +132,25 @@ abstract class ListAPI<S,C : ItemApi<C>>(
         client.newCall(request).execute().apply {
             println(this.request.url.toUrl().toString())
             response = getJsonAdapter().fromJson(this.body?.source()!!)
-            response?.let {
-                if (it is Array<*>) {
-                    it.forEach {
+            response?.let { responseObj ->
+                if (responseObj is Array<*>) {
+                    responseObj.forEach {
                         if (it is ItemApi<*>) {
-                            it.readFromServer(client)
-                            children.add(it)
+                            it.readFromServer(client)?.let { child ->
+                                children.add( child )
+                            }
                         }
                     }
                 }
-
             }
         }
+        return this
     }
 }
 
 // TODO: NOTE: T == Subclass for now
 // Allowed to have children, but matching won't be done on them as if from a list
-abstract class ItemApi<T> : Tag() {
+abstract class ItemApi<T : ItemApi<T>> : Tag() {
     // Only override this if you want to get the object needed to match against
     override fun applyToServer(client: OkHttpClient) {
         applyToServer(client, null)
@@ -154,6 +158,7 @@ abstract class ItemApi<T> : Tag() {
 
     // NOTE: Any children should be updated if relevant
     abstract fun setPrimaryId(destinationPrimary: T)
+    open fun updatePrimaryIdInChildren() {}
     abstract fun primaryKeyEquals(target: T) : Boolean // TODO: Just a property that returns the value of primarykey which can then be .equals?
 
     enum class HttpRequestType {
@@ -192,10 +197,11 @@ abstract class ItemApi<T> : Tag() {
         // Just take the ID of this and then do a PUT? if there are any other differences
         target?.let {
             setPrimaryId(target)
+            updatePrimaryIdInChildren()
             createTputF = false
         }
 
-        if (this.equals(target)) {
+        if (this == target) {
             println("${this::class.simpleName} ${userVisibleName()} already exists and is equal. Skipping")
 
             // Check children, but no actions needed for this item
@@ -206,13 +212,13 @@ abstract class ItemApi<T> : Tag() {
         }
 
         val request : Request
-        if (createTputF) {
-            request = Request.Builder()
+        request = if (createTputF) {
+            Request.Builder()
                 .url(itemUrl(HttpRequestType.POST))
                 .post(getAsJson().toRequestBody(MEDIA_TYPE_JSON))
                 .build()
         } else {
-            request = Request.Builder()
+            Request.Builder()
                 .url(itemUrl(HttpRequestType.PUT))
                 .put(getAsJson().toRequestBody(MEDIA_TYPE_JSON))
                 .build()
@@ -221,10 +227,11 @@ abstract class ItemApi<T> : Tag() {
         client.newCall(request).execute().apply {
             println(this.request.url.toUrl().toString())
             if (this.isSuccessful) {
-                println("Create? ${createTputF} call successful")
+                println("Create? $createTputF call successful")
                 setPrimaryId(getFromJson(this.body?.source())!!)
+                updatePrimaryIdInChildren()
             } else {
-                println("Create? ${createTputF} call failed")
+                println("Create? $createTputF call failed")
                 println("Request: ${getAsJson()}")
                 println("Response: ${this.body?.string()}")
                 throw RuntimeException("Bad State")
@@ -251,7 +258,15 @@ abstract class ItemApi<T> : Tag() {
     }
 
     // Default that does nothing as there are no children to get
-    open fun readFromServer(client: OkHttpClient) {
+    open fun readFromServer(client: OkHttpClient) : T? {
+        val request = Request.Builder()
+            .url(itemUrl(HttpRequestType.GET))
+            .build()
 
+        client.newCall(request).execute().apply {
+            println(this.request.url.toUrl().toString())
+            return getFromJson(this.body?.source()!!)
+        }
+        return null
     }
 }

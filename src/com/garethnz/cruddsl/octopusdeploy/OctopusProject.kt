@@ -8,6 +8,16 @@ import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import okhttp3.OkHttpClient
 
 class ProjectList : ListAPI<Array<Project>, Project>() {
+
+    var SpaceId: String? = null
+        set(value) {
+            field = value
+            children.forEach { element ->
+                if (element is Project) {
+                    element.SpaceId = value
+                }
+            }
+        }
     fun project(init: Project.() -> Unit) = initTag(Project(), init)
     override fun url(): String {
         return url
@@ -35,16 +45,33 @@ class ProjectList : ListAPI<Array<Project>, Project>() {
 }
 
 class Project : ItemApi<Project>() {
-    fun deploymentprocess(init: DeploymentProcess.() -> Unit) = initTag(DeploymentProcess(ProjectId = Id), init)
+    fun deploymentprocess(init: DeploymentProcess.() -> Unit) = initTag(DeploymentProcess(ProjectId = Id, SpaceId = SpaceId), init)
 
     // Id can't be set, so don't bother specifying it. We can also get it from the server when we are running as the unique Id is also "Name"
     // Though if someone changes the Name....
     private var Id: String? = null // If we need to create then we get a new Id?
+        set(value) {
+            field = value
+            children.forEach { element ->
+                if (element is DeploymentProcess) {
+                    element.ProjectId = value
+                }
+            }
+        }
+    var SpaceId: String? = null
+        set(value) {
+            field = value
+            children.forEach { element ->
+                if (element is DeploymentProcess) {
+                    element.SpaceId = value
+                }
+            }
+        }
     private val VariableSetId: String
-            get() = "variableset-${Id}"
+            get() = "variableset-$Id"
     // The DeploymentProcessId don't seem to be able to be changed, so project is correct as to the process ID, and there for use that to set the Id of the below
     private val DeploymentProcessId: String
-        get() = "deploymentprocess-${Id}"
+        get() = "deploymentprocess-$Id"
     var DiscreteChannelRelease = false
     var IncludedLibraryVariableSetIdS: String? = null
     var DefaultToSkipIfAlreadyInstalled = false
@@ -65,15 +92,9 @@ class Project : ItemApi<Project>() {
     var ClonedFromProjectId: String? = null
     var ExtensionSettings: Array<String> = arrayOf()
     var ReleaseNotesTemplate: String? = null
-    var SpaceId: String? = null
 
     override fun setPrimaryId(destinationPrimary: Project) {
         Id = destinationPrimary.Id
-        children.forEach { element ->
-            if (element is DeploymentProcess) {
-                element.ProjectId = Id
-            }
-        }
     }
 
     override fun primaryKeyEquals(target: Project): Boolean {
@@ -157,10 +178,15 @@ class Project : ItemApi<Project>() {
         return result
     }
 
-    override fun readFromServer(client: OkHttpClient) {
-        val result = deploymentprocess { }
-        // TODO: READ deployment process
-        result.readFromServer(client)
+    override fun readFromServer(client: OkHttpClient) : Project? {
+        super.readFromServer(client)?.let {project ->
+            deploymentprocess { }.readFromServer(client)?.let { dp ->
+                project.children.add(dp)
+                return project
+            }
+        }
+
+        return null
     }
 }
 

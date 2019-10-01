@@ -53,6 +53,14 @@ class Space : ItemApi<Space>() {
     fun projects(init: ProjectList.() -> Unit) = initTag(ProjectList(), init)
 
     var Id : String? = null
+        set(value) {
+            field = value
+            children.forEach { element ->
+                if (element is ProjectList) {
+                    element.SpaceId = value
+                }
+            }
+        }
     var Name : String? = null
     var Description : String? = null
     var IsDefault : Boolean? = false
@@ -114,8 +122,14 @@ class Space : ItemApi<Space>() {
     }
 
 
-    override fun readFromServer(client: OkHttpClient) {
-        val child = projects {  }
-        child.readFromServer(client)
+    override fun readFromServer(client: OkHttpClient) : Space? {
+        super.readFromServer(client)?.let {self ->
+            projects { }.readFromServer(client).let { child ->
+                self.children.add(child as ProjectList)
+                return self
+            }
+        }
+
+        return null
     }
 }

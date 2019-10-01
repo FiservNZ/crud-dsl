@@ -5,13 +5,12 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 
 // Deployment Process
-class DeploymentProcess(var ProjectId: String?) : ItemApi<DeploymentProcess>() {
+class DeploymentProcess(var ProjectId: String?, var SpaceId: String?) : ItemApi<DeploymentProcess>() {
     private val Id: String
-        get() = "deploymentprocess-${ProjectId}"
+        get() = "deploymentprocess-$ProjectId"
     var Steps: Array<Step> = arrayOf()
-    var Version: Long = 1 // TODO: Don't use as property, either 1... or use existing #
+    private var Version: Long = 1 // TODO: Don't use as property, either 1... or use existing #
     var LastSnapshotId: String? = null
-    var SpaceId: String? = null
 
     override fun setPrimaryId(destinationPrimary: DeploymentProcess) {
         if (Id != destinationPrimary.Id) {
@@ -35,11 +34,11 @@ class DeploymentProcess(var ProjectId: String?) : ItemApi<DeploymentProcess>() {
     }
 
     override fun userVisibleName(): String {
-        return Id!!
+        return Id
     }
 
-    // TODO: Because parent is not a list, it can't get the target object for us
     override fun applyToServer(client: OkHttpClient) {
+        // TODO: If Id is not set, try and find the target
         val request = Request.Builder()
             .url(itemUrl(HttpRequestType.GET))
             .build()
@@ -83,6 +82,7 @@ class DeploymentProcess(var ProjectId: String?) : ItemApi<DeploymentProcess>() {
 
 }
 
+// TODO: All data classes need nicer toStrings... for the dsl.. maybe
 data class Step (
     val Id: String? = null,
     val Name: String,
@@ -118,6 +118,22 @@ data class Step (
         result = 31 * result + PackageRequirement.hashCode()
         result = 31 * result + Actions.contentHashCode()
         return result
+    }
+
+    override fun toString(): String {
+        return "Step {\n" +
+                //"Id = \"$Id\"\n" +
+                "Name = \"$Name\"\n" +
+                "PackageRequirement = \"$PackageRequirement\"\n" +
+                "Properties = mapOf(\n" +
+                    // TODO: Properties.forEach() +
+                    Properties +
+                ")\n" +
+                "Condition\": \"$Condition\"\n" +
+                "StartTrigger\": \"$StartTrigger\",\n" +
+                "Actions = arrayOf(${Actions.joinToString(separator = ",\n")})\n" +
+                ")\n" +
+                "}"
     }
 }
 
@@ -173,5 +189,26 @@ data class Action (
         result = 31 * result + IsRequired.hashCode()
         result = 31 * result + (WorkerPoolId?.hashCode() ?: 0)
         return result
+    }
+
+    override fun toString(): String {
+        return "Action {" +
+            //"Id = \"$Id\"\n" +
+            "Name = \"$Name\"\n" +
+            "ActionType = \"$ActionType\"\n" +
+            "IsDisabled = $IsDisabled\n" +
+            "CanBeUsedForProjectVersioning = $CanBeUsedForProjectVersioning\n" +
+            "IsRequired = $IsRequired\n" +
+            "WorkerPoolId = $WorkerPoolId\n" +
+            "Environments = $Environments\n" +
+            "ExcludedEnvironments = $ExcludedEnvironments\n" +
+            "Channels = $ExcludedEnvironments\n" +
+            "TenantTags = $ExcludedEnvironments\n" +
+            "Packages = $ExcludedEnvironments\n" +
+            "Properties = mapOf($Properties)\n" +
+        "}\n" +
+            "Links = $Links\n" +
+        "}\n" +
+        "}"
     }
 }
